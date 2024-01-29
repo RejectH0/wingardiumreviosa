@@ -1,8 +1,7 @@
-
 #!/usr/bin/env python3
-
+#
 # wingardiumreviosa.py - Version 0.1 - 202401281700 - Creation
-
+#
 import os
 import time
 import logging
