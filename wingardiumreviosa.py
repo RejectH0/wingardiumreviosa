@@ -244,10 +244,10 @@ def main():
         logging.error(f"Error in main execution: {e}")
 
     finally:
-    if db_connection:
-        cursor.close()
-        db_connection.close()
-        logging.info("Database connection closed.")
+        if db_connection:
+            cursor.close()
+            db_connection.close()
+            logging.info("Database connection closed.")
 
 if __name__ == "__main__":
     main()
