@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# wingardiumreviosa.py - Version 1.0 - 202401282005 - Update
+# wingardiumreviosa.py - Version 1.0 - 202401282100 - Update
 #
 import os
 import socket
@@ -11,6 +11,7 @@ from datetime import datetime
 import configparser
 import subprocess
 import pymysql
+import shutil
 
 def read_config():
     config = configparser.ConfigParser()
@@ -156,6 +157,11 @@ def check_and_create_wrstats_table(cursor, hostname):
         logging.error(f"Error creating 'wr_stats' table: {e}")
         raise
 
+def get_available_space(path):
+    """ Returns the available space in bytes at the given path. """
+    total, used, free = shutil.disk_usage(path)
+    return free
+
 def insert_test_results(cursor, hostname, test_results):
     try:
         insert_query = f"INSERT INTO {hostname}_wr_stats (timestamp, default_data_size_mb, write_duration_secs, read_duration_secs) VALUES (%s, %s, %s, %s)"
@@ -216,6 +222,15 @@ def main():
         last_host_info = retrieve_last_host_info(cursor, hostname)
         if not last_host_info or last_host_info['serial'] != host_info['serial']:
             insert_host_info(cursor, hostname, host_info)
+
+        # Check Disk Space
+        temp_file_path = f"/tmp/wingardiumreviosa-{datetime.now().strftime('%Y%m%d%H%M%S')}.tmp"
+        required_space = DEFAULT_DATA_SIZE_MB * 1024 * 1024  # Convert MB to bytes
+        available_space = get_available_space("/tmp")
+
+        if available_space < required_space:
+            logging.error(f"Not enough disk space. Required: {required_space} bytes, Available: {available_space} bytes")
+            return  # Exit the function
 
         # Write and Read Test
         data_size = DEFAULT_DATA_SIZE_MB
