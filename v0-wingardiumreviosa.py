@@ -1,19 +1,11 @@
 #!/usr/bin/env python3
 #
-# wingardiumreviosa.py - Version 1.0 - 202401281915 - Update
+# wingardiumreviosa.py - Version 0.1 - 202401281700 - Creation
 #
 import os
 import time
 import logging
 from datetime import datetime
-import configparser
-import subprocess
-import pymysql
-
-def read_config():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    return config['database']
 
 # Constants
 DEFAULT_DATA_SIZE_MB = 1  # Default size of data to write/read
@@ -23,41 +15,6 @@ LOG_FILE_NAME = "wingardiumreviosa-" + datetime.now().strftime("%Y%m%d%H%M%S") +
 # Configure logging
 logging.basicConfig(filename=LOG_FILE_NAME, level=logging.INFO,
                     format='%(asctime)s %(levelname)s:%(message)s')
-
-def collect_host_info():
-    def run_command(command):
-        return subprocess.check_output(command, shell=True).decode().strip()
-
-    host_info = {
-        'timestamp': datetime.now().strftime("%Y%m%d%H%M%S"),
-        'hostname': run_command('hostname'),
-        'serial': run_command("grep -m 1 'Serial' /proc/cpuinfo | cut -d ':' -f2 | sed 's/^[ \t]*//'") or 'N/A',
-        'model': run_command("cat /proc/device-tree/model"),
-        # ... other commands
-    }
-    return host_info
-
-def connect_to_database(config):
-    return pymysql.connect(host=config['host'], user=config['user'], password=config['password'])
-
-def check_and_create_database(cursor):
-    cursor.execute("CREATE DATABASE IF NOT EXISTS {hostname}_wingardiumreviosa")
-
-def check_and_create_tables(cursor):
-    cursor.execute("CREATE TABLE IF NOT EXISTS {hostname}_stats (id INT AUTO_INCREMENT PRIMARY KEY, ...)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS wr_stats (id INT AUTO_INCREMENT PRIMARY KEY, ...)")
-
-def insert_host_info(cursor, host_info):
-    insert_query = "INSERT INTO {hostname}_stats (timestamp, hostname, ...) VALUES (%s, %s, ...)"
-    cursor.execute(insert_query, list(host_info.values()))
-
-def retrieve_last_host_info(cursor):
-    cursor.execute("SELECT * FROM {hostname}_stats ORDER BY id DESC LIMIT 1")
-    return cursor.fetchone()
-
-def insert_test_results(cursor, test_results):
-    insert_query = "INSERT INTO wr_stats (timestamp, default_data_size_mb, ...) VALUES (%s, %s, ...)"
-    cursor.execute(insert_query, list(test_results.values()))
 
 def generate_data(size_mb):
     # Generates a string of alternating 0s and 1s of the specified size in MB.
