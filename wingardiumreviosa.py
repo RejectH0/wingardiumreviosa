@@ -18,7 +18,7 @@ def read_config():
     return config['database']
 
 # Constants
-DEFAULT_DATA_SIZE_MB = 1000000  # Default size of data to write/read
+DEFAULT_DATA_SIZE_MB = 100000  # Default size of data to write/read
 DATA_PATTERN = "01"  # Data pattern to write (alternating 0s and 1s)
 LOG_FILE_NAME = "wingardiumreviosa-" + datetime.now().strftime("%Y%m%d%H%M%S") + ".log"
 
@@ -170,12 +170,17 @@ def generate_data(size_mb):
     size_bytes = size_mb * 1024 * 1024
     return (DATA_PATTERN * (size_bytes // len(DATA_PATTERN)))[:size_bytes]
 
-def write_data_to_file(data, file_path):
-    # Writes the provided data to the specified file path.
+def write_data_to_file(file_path, size_mb, chunk_size_mb=10):
+    # Writes data to the specified file path in chunks.
     try:
+        size_bytes = size_mb * 1024 * 1024
+        chunk_bytes = chunk_size_mb * 1024 * 1024
+        data_pattern = DATA_PATTERN * (chunk_bytes // len(DATA_PATTERN))
+
         with open(file_path, 'w') as file:
-            file.write(data)
-        logging.info(f"Successfully wrote data to {file_path}")
+            for _ in range(0, size_bytes, chunk_bytes):
+                file.write(data_pattern)
+        logging.info(f"Successfully wrote {size_mb}MB of data to {file_path}")
     except Exception as e:
         logging.error(f"Error writing data to file: {e}")
 
@@ -214,12 +219,11 @@ def main():
 
         # Write and Read Test
         data_size = DEFAULT_DATA_SIZE_MB
-        data = generate_data(data_size)
         temp_file_path = f"/tmp/wingardiumreviosa-{datetime.now().strftime('%Y%m%d%H%M%S')}.tmp"
 
         # Write Data
         start_time = time.time()
-        write_data_to_file(data, temp_file_path)
+        write_data_to_file(temp_file_path, data_size) 
         write_duration = time.time() - start_time
 
         # Read Data
