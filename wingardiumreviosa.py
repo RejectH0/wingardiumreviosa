@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 #
-# wingardiumreviosa.py - Version 1.0 - 202401281955 - Update
+# wingardiumreviosa.py - Version 1.0 - 202401282005 - Update
 #
 import os
+import socket
 import time
 import logging
 from datetime import datetime
@@ -186,28 +187,67 @@ def read_data_from_file(file_path):
         return None
 
 def main():
-    # Main function to execute the write and read speed test.
     try:
+        # Database Connection Setup
+        db_config = read_config()
+        db_connection = connect_to_database(db_config)
+        cursor = db_connection.cursor()
+
+        # Hostname for dynamic database/table naming
+        hostname = socket.gethostname()
+
+        # Database and Tables Setup
+        check_and_create_database(cursor, hostname)
+        db_connection.select_db(f"{hostname}_wingardiumreviosa")
+        check_and_create_hoststats_table(cursor, hostname)
+        check_and_create_wrstats_table(cursor, hostname)
+
+        # Collect and Compare Host Information
+        host_info = collect_host_info()
+        last_host_info = retrieve_last_host_info(cursor, hostname)
+        if not last_host_info or last_host_info['serial'] != host_info['serial']:
+            insert_host_info(cursor, hostname, host_info)
+
+        # Write and Read Test
         data_size = DEFAULT_DATA_SIZE_MB
         data = generate_data(data_size)
-
-        # Generate file path
         temp_file_path = f"/tmp/wingardiumreviosa-{datetime.now().strftime('%Y%m%d%H%M%S')}.tmp"
 
-        # Write data to file
+        # Write Data
         start_time = time.time()
         write_data_to_file(data, temp_file_path)
         write_duration = time.time() - start_time
-        logging.info(f"Write duration for {data_size}MB: {write_duration} seconds")
 
-        # Read data from file
+        # Read Data
         start_time = time.time()
         read_data = read_data_from_file(temp_file_path)
         read_duration = time.time() - start_time
-        logging.info(f"Read duration for {data_size}MB: {read_duration} seconds")
+
+        # Insert Test Results
+        test_results = {
+            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            'default_data_size_mb': data_size,
+            'write_duration_secs': write_duration,
+            'read_duration_secs': read_duration
+        }
+        insert_test_results(cursor, hostname, test_results)
+
+        # Delete Temporary File
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+            logging.info(f"Deleted temporary file {temp_file_path}")
+
+        # Commit Changes and Close Database Connection
+        db_connection.commit()
 
     except Exception as e:
         logging.error(f"Error in main execution: {e}")
+
+    finally:
+        if db_connection and not db_connection.closed:
+            cursor.close()
+            db_connection.close()
+            logging.info("Database connection closed.")
 
 if __name__ == "__main__":
     main()
