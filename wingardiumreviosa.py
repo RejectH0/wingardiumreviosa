@@ -17,7 +17,7 @@ def read_config():
     return config['database']
 
 # Constants
-DEFAULT_DATA_SIZE_MB = 1  # Default size of data to write/read
+DEFAULT_DATA_SIZE_MB = 100  # Default size of data to write/read
 DATA_PATTERN = "01"  # Data pattern to write (alternating 0s and 1s)
 LOG_FILE_NAME = "wingardiumreviosa-" + datetime.now().strftime("%Y%m%d%H%M%S") + ".log"
 
@@ -130,8 +130,11 @@ def insert_host_info(cursor, hostname, host_info):
 def retrieve_last_host_info(cursor, hostname):
     try:
         cursor.execute(f"SELECT * FROM {hostname}_stats ORDER BY id DESC LIMIT 1")
-        logging.info("Last host information retrieved successfully.")
-        return cursor.fetchone()
+        result = cursor.fetchone()
+        if result:
+            columns = [col[0] for col in cursor.description]
+            return dict(zip(columns, result))
+        return None
     except pymysql.MySQLError as e:
         logging.error(f"Error retrieving last host information: {e}")
         raise
