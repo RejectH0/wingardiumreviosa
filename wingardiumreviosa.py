@@ -238,7 +238,7 @@ def main():
 
         # Write and Read Test
         data_size = DEFAULT_DATA_SIZE_MB
-        temp_file_path = f"/mnt/tmp/wingardiumreviosa-{datetime.now().strftime('%Y%m%d%H%M%S')}.tmp"
+        temp_file_path = f"/tmp/wingardiumreviosa-{datetime.now().strftime('%Y%m%d%H%M%S')}.tmp"
 
         # Write Data
         start_time = time.time()
