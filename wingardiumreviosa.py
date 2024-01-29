@@ -64,11 +64,19 @@ def collect_host_info():
         nic_ip = 'N/A'
         logging.info("NIC IP address not found, set to 'N/A'.")
 
+    # Check if /proc/device-tree/model exists before reading
+    model_file_path = "/proc/device-tree/model"
+    if os.path.exists(model_file_path):
+        model = run_command(f"cat {model_file_path}")
+    else:
+        model = 'N/A'
+        logging.info(f"Model file {model_file_path} not found, set to 'N/A'.")
+
     host_info = {
         'timestamp': datetime.now().strftime("%Y%m%d%H%M%S"),
         'hostname': run_command('hostname'),
         'serial': serial,
-        'model': run_command("cat /proc/device-tree/model") or 'N/A',
+        'model': model, 
         'proc_count': int(run_command("grep -c ^processor /proc/cpuinfo") or 0),
         'proc_model': proc_model,
         'disk_usage_root': disk_usage_root,
