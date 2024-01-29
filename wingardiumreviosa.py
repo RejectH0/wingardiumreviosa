@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# wingardiumreviosa.py - Version 1.0 - 202401281915 - Update
+# wingardiumreviosa.py - Version 1.0 - 202401281955 - Update
 #
 import os
 import time
@@ -78,26 +78,87 @@ def collect_host_info():
     return host_info
 
 def connect_to_database(config):
-    return pymysql.connect(host=config['host'], user=config['user'], password=config['password'])
+    try:
+        conn = pymysql.connect(host=config['host'], port=int(config['port']), user=config['user'], password=config['password'])
+        logging.info("Successfully connected to the database.")
+        return conn
+    except pymysql.MySQLError as e:
+        logging.error(f"Error connecting to the database: {e}")
+        raise
 
-def check_and_create_database(cursor):
-    cursor.execute("CREATE DATABASE IF NOT EXISTS {hostname}_wingardiumreviosa")
+def check_and_create_database(cursor, hostname):
+    try:
+        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {hostname}_wingardiumreviosa")
+        logging.info(f"Database '{hostname}_wingardiumreviosa' checked/created successfully.")
+    except pymysql.MySQLError as e:
+        logging.error(f"Error creating database: {e}")
+        raise
 
-def check_and_create_tables(cursor):
-    cursor.execute("CREATE TABLE IF NOT EXISTS {hostname}_stats (id INT AUTO_INCREMENT PRIMARY KEY, ...)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS wr_stats (id INT AUTO_INCREMENT PRIMARY KEY, ...)")
+def check_and_create_hoststats_table(cursor, hostname):
+    try:
+        stats_table_query = f"""
+        CREATE TABLE IF NOT EXISTS {hostname}_stats (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            timestamp DATETIME,
+            hostname VARCHAR(32),
+            serial VARCHAR(64),
+            model VARCHAR(128),
+            proc_count INT(2),
+            proc_model VARCHAR(64),
+            disk_usage_root VARCHAR(128),
+            total_ram INT(16),
+            nic_mac VARCHAR(45),
+            nic_ip VARCHAR(45)
+        )"""
+        cursor.execute(stats_table_query)
+        logging.info(f"Table '{hostname}_stats' checked/created successfully.")
 
-def insert_host_info(cursor, host_info):
-    insert_query = "INSERT INTO {hostname}_stats (timestamp, hostname, ...) VALUES (%s, %s, ...)"
-    cursor.execute(insert_query, list(host_info.values()))
+    except pymysql.MySQLError as e:
+        logging.error(f"Error creating tables: {e}")
+        raise
 
-def retrieve_last_host_info(cursor):
-    cursor.execute("SELECT * FROM {hostname}_stats ORDER BY id DESC LIMIT 1")
-    return cursor.fetchone()
+def insert_host_info(cursor, hostname, host_info):
+    try:
+        insert_query = f"INSERT INTO {hostname}_stats (timestamp, hostname, serial, model, proc_count, proc_model, disk_usage_root, total_ram, nic_mac, nic_ip) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(insert_query, list(host_info.values()))
+        logging.info("Host information inserted successfully.")
+    except pymysql.MySQLError as e:
+        logging.error(f"Error inserting host information: {e}")
+        raise
 
-def insert_test_results(cursor, test_results):
-    insert_query = "INSERT INTO wr_stats (timestamp, default_data_size_mb, ...) VALUES (%s, %s, ...)"
-    cursor.execute(insert_query, list(test_results.values()))
+def retrieve_last_host_info(cursor, hostname):
+    try:
+        cursor.execute(f"SELECT * FROM {hostname}_stats ORDER BY id DESC LIMIT 1")
+        logging.info("Last host information retrieved successfully.")
+        return cursor.fetchone()
+    except pymysql.MySQLError as e:
+        logging.error(f"Error retrieving last host information: {e}")
+        raise
+
+def check_and_create_wrstats_table(cursor, hostname):
+    try:
+        stats_table_query = f"""
+        CREATE TABLE IF NOT EXISTS {hostname}_wr_stats (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            timestamp DATETIME,
+            default_data_size_mb INT(16),
+            write_duration_secs DECIMAL(20,10),
+            read_duration_secs DECIMAL(20,10)
+        )"""
+        cursor.execute(stats_table_query)
+        logging.info(f"Table '{hostname}_wr_stats' checked/created successfully.")
+    except pymysql.MySQLError as e:
+        logging.error(f"Error creating 'wr_stats' table: {e}")
+        raise
+
+def insert_test_results(cursor, hostname, test_results):
+    try:
+        insert_query = f"INSERT INTO {hostname}_wr_stats (timestamp, default_data_size_mb, write_duration_secs, read_duration_secs) VALUES (%s, %s, %s, %s)"
+        cursor.execute(insert_query, list(test_results.values()))
+        logging.info("Test results inserted successfully.")
+    except pymysql.MySQLError as e:
+        logging.error(f"Error inserting test results: {e}")
+        raise
 
 def generate_data(size_mb):
     # Generates a string of alternating 0s and 1s of the specified size in MB.
