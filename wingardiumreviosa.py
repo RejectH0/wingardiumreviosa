@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# wingardiumreviosa.py - Version 1.0 - 202401282100 - Update
+# wingardiumreviosa.py - Version 1.0 - 202401282245 - Update
 #
 import os
 import socket
@@ -19,7 +19,7 @@ def read_config():
     return config['database']
 
 # Constants
-DEFAULT_DATA_SIZE_MB = 10000  # Default size of data to write/read
+DEFAULT_DATA_SIZE_MB = 10000 # Default size of data to write/read
 DATA_PATTERN = "01"  # Data pattern to write (alternating 0s and 1s)
 LOG_FILE_NAME = "wingardiumreviosa-" + datetime.now().strftime("%Y%m%d%H%M%S") + ".log"
 
@@ -238,7 +238,7 @@ def main():
 
         # Write and Read Test
         data_size = DEFAULT_DATA_SIZE_MB
-        temp_file_path = f"/tmp/wingardiumreviosa-{datetime.now().strftime('%Y%m%d%H%M%S')}.tmp"
+        temp_file_path = f"/mnt/tmp/wingardiumreviosa-{datetime.now().strftime('%Y%m%d%H%M%S')}.tmp"
 
         # Write Data
         start_time = time.time()
