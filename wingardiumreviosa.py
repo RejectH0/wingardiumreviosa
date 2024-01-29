@@ -19,7 +19,7 @@ def read_config():
     return config['database']
 
 # Constants
-DEFAULT_DATA_SIZE_MB = 100000  # Default size of data to write/read
+DEFAULT_DATA_SIZE_MB = 10000  # Default size of data to write/read
 DATA_PATTERN = "01"  # Data pattern to write (alternating 0s and 1s)
 LOG_FILE_NAME = "wingardiumreviosa-" + datetime.now().strftime("%Y%m%d%H%M%S") + ".log"
 
@@ -190,13 +190,17 @@ def write_data_to_file(file_path, size_mb, chunk_size_mb=10):
     except Exception as e:
         logging.error(f"Error writing data to file: {e}")
 
-def read_data_from_file(file_path):
-    # Reads data from the specified file path.
+def read_data_from_file(file_path, chunk_size_mb=10):
+    # Reads data from the specified file path in chunks.
     try:
+        chunk_bytes = chunk_size_mb * 1024 * 1024
         with open(file_path, 'r') as file:
-            data = file.read()
+            while True:
+                data_chunk = file.read(chunk_bytes)
+                if not data_chunk:
+                    break
+                # Process the chunk (if needed)
         logging.info(f"Successfully read data from {file_path}")
-        return data
     except Exception as e:
         logging.error(f"Error reading data from file: {e}")
         return None
