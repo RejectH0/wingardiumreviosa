@@ -19,7 +19,7 @@ def read_config():
     return config['database']
 
 # Constants
-DEFAULT_DATA_SIZE_MB = 10000 # Default size of data to write/read
+DEFAULT_DATA_SIZE_MB = 5000 # Default size of data to write/read
 DATA_PATTERN = "01"  # Data pattern to write (alternating 0s and 1s)
 LOG_FILE_NAME = "wingardiumreviosa-" + datetime.now().strftime("%Y%m%d%H%M%S") + ".log"
 
