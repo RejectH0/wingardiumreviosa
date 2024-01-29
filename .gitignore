@@ -1,6 +1,10 @@
 config.ini
 wingardiumreviosa-*.log
 pyvenv.cfg
+bin
+include
+lib
+lib64
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
