@@ -26,15 +26,55 @@ logging.basicConfig(filename=LOG_FILE_NAME, level=logging.INFO,
 
 def collect_host_info():
     def run_command(command):
-        return subprocess.check_output(command, shell=True).decode().strip()
+        try:
+            result = subprocess.check_output(command, shell=True).decode().strip()
+            logging.info(f"Command '{command}' executed successfully.")
+            return result
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Command '{command}' failed to execute: {e}")
+            return None
+
+    serial = run_command("grep -m 1 'Serial' /proc/cpuinfo | cut -d ':' -f2 | sed 's/^[ \t]*//'")
+    if not serial:
+        serial = 'N/A'
+        logging.info("Serial number not found, set to 'N/A'.")
+
+    proc_model = run_command("grep -m 1 'model name' /proc/cpuinfo | cut -d ':' -f2 | sed 's/^[ \t]*//'")
+    if not proc_model:
+        proc_model = run_command("grep -m 1 'Revision' /proc/cpuinfo | cut -d ':' -f2 | sed 's/^[ \t]*//'")
+        if not proc_model:
+            proc_model = 'N/A'
+            logging.info("Processor model not found, set to 'N/A'.")
+
+    disk_usage_root = run_command("df -ah | grep '\/$'")
+    if not disk_usage_root:
+        disk_usage_root = 'N/A'
+        logging.info("Disk usage for root not found, set to 'N/A'.")
+
+    nic_mac = run_command("ip link show $(ip route show default | awk '/default/ {print $5}') | awk '/ether/ {print $2}'")
+    if not nic_mac:
+        nic_mac = 'N/A'
+        logging.info("NIC MAC address not found, set to 'N/A'.")
+
+    nic_ip = run_command("ip -4 addr show $(ip route show default | awk '/default/ {print $5}') | grep -oP '(?<=inet\s)\d+(\.\d+){3}'")
+    if not nic_ip:
+        nic_ip = 'N/A'
+        logging.info("NIC IP address not found, set to 'N/A'.")
 
     host_info = {
         'timestamp': datetime.now().strftime("%Y%m%d%H%M%S"),
         'hostname': run_command('hostname'),
-        'serial': run_command("grep -m 1 'Serial' /proc/cpuinfo | cut -d ':' -f2 | sed 's/^[ \t]*//'") or 'N/A',
-        'model': run_command("cat /proc/device-tree/model"),
-        # ... other commands
+        'serial': serial,
+        'model': run_command("cat /proc/device-tree/model") or 'N/A',
+        'proc_count': int(run_command("grep -c ^processor /proc/cpuinfo") or 0),
+        'proc_model': proc_model,
+        'disk_usage_root': disk_usage_root,
+        'total_ram': run_command("free | grep Mem: | awk '{print $2}'") or '0',
+        'nic_mac': nic_mac,
+        'nic_ip': nic_ip,
     }
+
+    logging.info(f"Collected host information: {host_info}")
     return host_info
 
 def connect_to_database(config):
