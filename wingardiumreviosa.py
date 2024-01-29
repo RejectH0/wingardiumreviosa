@@ -234,6 +234,8 @@ def main():
         last_host_info = retrieve_last_host_info(cursor, hostname)
         if not last_host_info or last_host_info['serial'] != host_info['serial']:
             insert_host_info(cursor, hostname, host_info)
+        else:
+            logging.info("Host information already up to date, skipping insertion.")
 
         # Check Disk Space
         temp_file_path = f"/tmp/wingardiumreviosa-{datetime.now().strftime('%Y%m%d%H%M%S')}.tmp"
