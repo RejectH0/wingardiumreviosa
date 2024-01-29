@@ -4,6 +4,7 @@
 #
 import os
 import socket
+import traceback
 import time
 import logging
 from datetime import datetime
@@ -17,7 +18,7 @@ def read_config():
     return config['database']
 
 # Constants
-DEFAULT_DATA_SIZE_MB = 100  # Default size of data to write/read
+DEFAULT_DATA_SIZE_MB = 1000000  # Default size of data to write/read
 DATA_PATTERN = "01"  # Data pattern to write (alternating 0s and 1s)
 LOG_FILE_NAME = "wingardiumreviosa-" + datetime.now().strftime("%Y%m%d%H%M%S") + ".log"
 
@@ -244,7 +245,7 @@ def main():
         db_connection.commit()
 
     except Exception as e:
-        logging.error(f"Error in main execution: {e}")
+        logging.error(f"Error in main execution: {e}\n{traceback.format_exc()}")
 
     finally:
         if db_connection:
